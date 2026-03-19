@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (agentName.includes('Query')) avatar = '📚';
             else if (agentName.includes('Recommendation')) avatar = '🎯';
             else if (agentName.includes('Quiz')) avatar = '✏️';
+            else if (agentName.includes('PDF') || agentName.includes('Summarizer')) avatar = '📑';
         }
 
         const htmlContent = role === 'user' ? `<p>${text}</p>` : marked.parse(text);
@@ -76,14 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!file) return;
 
         if (!file.name.toLowerCase().endsWith('.pdf')) {
-            addMessage('System', 'Please select a valid PDF file.', 'agent');
+            appendMessage('agent', 'Please select a valid PDF file.', 'System');
             return;
         }
 
         // Show loading state
-        addMessage('You', `[Uploading PDF: ${file.name}]`, 'user');
-        const loadingMsgId = Date.now();
-        addMessage('Coordinator', 'Analyzing document...', 'agent');
+        appendMessage('user', `[Uploading PDF: ${file.name}]`);
+        appendMessage('agent', 'Analyzing document...', 'Coordinator');
 
         const formData = new FormData();
         formData.append('file', file);
@@ -97,17 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (response.ok) {
-                // Remove loading msg if possible or just append
-                addMessage('PDF Summarizer Agent', data.response, 'agent');
-                updateAgentActivity('active-quiz', false); // Clean up state
-                updateAgentActivity('active-recommendation', false);
-                updateAgentActivity('active-query', false);
-                updateAgentActivity('active-quiz', true); // Visual highlight for result
+                appendMessage('agent', data.response, data.decision);
+                setActiveNode(null); 
             } else {
-                addMessage('System', `Error: ${data.detail}`, 'agent');
+                appendMessage('agent', `Error: ${data.detail}`, 'System Error');
             }
         } catch (error) {
-            addMessage('System', 'Could not upload file.', 'agent');
+            appendMessage('agent', 'Could not upload file.', 'System Error');
         } finally {
             pdfUpload.value = ''; // Reset input
         }
@@ -155,15 +151,20 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // UI Effects - Step 3: Activate specific Sub-Agent visually
             setTimeout(() => {
-                const subNodeKey = data.agent_used.replace('Agent', '').toLowerCase();
+                let subNodeKey = data.decision.toLowerCase();
+                if (subNodeKey.includes('quiz')) subNodeKey = 'quiz';
+                else if (subNodeKey.includes('recommend')) subNodeKey = 'recommendation';
+                else if (subNodeKey.includes('query')) subNodeKey = 'query';
+                else if (subNodeKey.includes('pdf')) subNodeKey = 'quiz'; // fallback highlight
+                
                 if(nodes[subNodeKey]) {
                     setActiveNode(subNodeKey);
-                    addLog(`Delegated task to ${data.agent_used}.`, false);
+                    addLog(`Delegated task to ${data.decision}.`, false);
                 }
 
                 // Show response after a tiny delay for visual effect
                 setTimeout(() => {
-                    appendMessage('agent', data.response, data.agent_used);
+                    appendMessage('agent', data.response, data.decision);
                     addLog('Response delivered to user.', true);
                     
                     // Reset glowing nodes after delivery
