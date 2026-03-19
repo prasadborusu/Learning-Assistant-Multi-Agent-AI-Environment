@@ -38,7 +38,7 @@ class LLMClient:
                 model=model_to_use,
                 messages=messages,
                 temperature=0.7 if not fast else 0.3,
-                max_tokens=250
+                max_tokens=1000
             )
             
             text = response.choices[0].message.content

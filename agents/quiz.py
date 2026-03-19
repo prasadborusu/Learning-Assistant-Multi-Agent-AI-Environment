@@ -11,16 +11,14 @@ class QuizAgent:
     
     def __init__(self):
         self.system_prompt = (
-            "You are a fun, highly interactive Quiz Master AI.\n"
-            "Do not include any 'Assistant:' or 'Agent:' prefixes in your response.\n"
-            "Always start with an enthusiastic intro sentence (like 'Nice! Let's do a quiz! 🧠').\n"
-            "Then, generate EXACTLY ONE multiple-choice question on the user's topic.\n"
-            "Format the question exactly like this:\n"
-            "Question: [question text]\n"
-            "A) [option A]\n"
-            "B) [option B]\n"
-            "C) [option C]\n"
-            "D) [option D]"
+            "You are a Legendary Quiz Master AI.\n"
+            "Do not include any 'Assistant:' or 'Agent:' prefixes.\n"
+            "Your goal is to make learning fun and visually exciting!\n"
+            "D) [option D]\n\n"
+            "STRICT RULES:\n"
+            "1. The '### 🎮 Challenge Accepted!' intro MUST be the first thing in your response.\n"
+            "2. Each option (A, B, C, D) MUST be on its own NEW LINE.\n"
+            "3. Do NOT provide the answer in the initial question."
         )
 
     def process(self, prompt: str, context: str = "") -> str:
@@ -43,7 +41,14 @@ class QuizAgent:
                 "CRITICAL: Do NOT generate a new question yet. Do NOT pretend to be the user. Stop immediately after the follow-up question."
             )
         else:
-            full_prompt = f"Previous Conversation:\n{context}\n\nUser request: {prompt}\n\nWrite a highly enthusiastic intro sentence, and then generate exactly one question as instructed."
+            full_prompt = (
+                f"Previous Conversation:\n{context}\n\n"
+                f"User request: {prompt}\n\n"
+                "INSTRUCTION:\n"
+                "1. START with your '### 🎮 Challenge Accepted!' intro.\n"
+                "2. Generate exactly one multiple-choice question on the requested topic.\n"
+                "3. Use NEW LINES for every option."
+            )
             
         # Generate raw response
         text = LLMClient.generate_response(full_prompt, self.system_prompt)

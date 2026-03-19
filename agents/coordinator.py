@@ -24,7 +24,7 @@ class CoordinatorAgent:
             return "PDF"
         
         # If the most recent conversation was a quiz question, lock the intent to QUIZ
-        if context and ("A)" in context[-200:] or "Ready for the next one" in context[-200:] or "Question:" in context[-200:]):
+        if context and ("A)" in context[-500:] or "Ready for the next one" in context[-500:] or "Question:" in context[-500:]):
             return "QUIZ"
         
         # Exact match heuristics
@@ -34,7 +34,11 @@ class CoordinatorAgent:
         quiz_keywords = ['quiz', 'test', 'exam', 'practice', 'exercise', 'question me']
         resource_keywords = ['resource', 'book', 'course', 'video', 'recommend', 'where to learn', 'link']
         
-        if any(keyword in text for keyword in quiz_keywords):
+        greeting_keywords = ['hi', 'hello', 'hey', 'greetings', 'morning', 'evening', 'good day']
+        
+        if any(text == kw or text.startswith(kw + ' ') for kw in greeting_keywords):
+            return "GREETING"
+        elif any(keyword in text for keyword in quiz_keywords):
             return "QUIZ"
         elif any(keyword in text for keyword in resource_keywords):
             return "RECOMMENDATION"
@@ -58,6 +62,9 @@ class CoordinatorAgent:
         elif intent == "PDF":
             selected_agent = "PDF Summarizer Agent"
             response = "I see you want to analyze a document! 📑 Please use the **Attachment** icon next to the chat box to upload your PDF, and I'll summarize it for you immediately."
+        elif intent == "GREETING":
+            selected_agent = "Coordinator"
+            response = "Hello! 👋 I'm your AI Learning Coordinator. I can help you explain complex topics, recommend study resources, or test your knowledge with quizzes. How can I assist you today?"
         else:
             selected_agent = "General Query Agent"
             response = self.query_agent.process(prompt, context)

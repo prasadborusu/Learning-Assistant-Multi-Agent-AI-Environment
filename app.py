@@ -59,7 +59,9 @@ async def upload_pdf(file: UploadFile = File(...), session_id: str = Form("defau
         memory_manager.add_message(session_id, "agent", summary)
         
         return {
-            "decision": "PDF Summarizer Agent",
+            "agent_key": "pdf",
+            "agent": "PDF Analyst",
+            "decision": "PDF Summarization",
             "response": summary,
             "filename": file.filename
         }

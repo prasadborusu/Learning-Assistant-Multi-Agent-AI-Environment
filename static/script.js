@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'coordinator': document.getElementById('node-coordinator'),
         'query': document.getElementById('node-query'),
         'recommendation': document.getElementById('node-recommendation'),
-        'quiz': document.getElementById('node-quiz')
+        quiz: document.getElementById('node-quiz'),
+        pdf: document.getElementById('node-pdf')
     };
 
     // Session ID representing current user session
@@ -28,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         liveLogs.scrollTop = liveLogs.scrollHeight;
     }
 
-    function appendMessage(role, text, agentName = null) {
+    function appendMessage(role, text, agentName = null, isFile = false) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${role === 'user' ? 'user-msg' : 'agent-msg'}`;
 
@@ -44,18 +45,55 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (agentName.includes('PDF') || agentName.includes('Summarizer')) avatar = '📑';
         }
 
-        const htmlContent = role === 'user' ? `<p>${text}</p>` : marked.parse(text);
+        let htmlContent;
+        if (isFile) {
+            htmlContent = `
+                <div class="file-card">
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                        <div class="file-name">${text}</div>
+                        <div class="file-type">PDF</div>
+                    </div>
+                </div>`;
+        } else {
+            htmlContent = role === 'user' ? `<p>${text}</p>` : marked.parse(text);
+        }
 
         msgDiv.innerHTML = `<div class="msg-avatar">${avatar}</div><div class="msg-content"><strong>${author}</strong>${htmlContent}</div>`;
-
+        
         chatHistory.appendChild(msgDiv);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
+        msgDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function showThinking(role, agentName = 'AI') {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${role}-msg thinking-bubble`;
+        msgDiv.id = 'thinking-msg';
+        
+        let avatar = '🧠';
+        if (agentName.includes('Query')) avatar = '📚';
+        else if (agentName.includes('Quiz')) avatar = '✏️';
+
+        msgDiv.innerHTML = `
+            <div class="msg-avatar">${avatar}</div>
+            <div class="msg-content shimmer" style="height: 60px; width: 250px; border-radius: 20px;"></div>
+        `;
+        chatHistory.appendChild(msgDiv);
+        msgDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return msgDiv;
+    }
+
+    function removeThinking() {
+        const thinking = document.getElementById('thinking-msg');
+        if (thinking) thinking.remove();
     }
 
     function setActiveNode(nodeKey) {
         // Reset all active states
         Object.values(nodes).forEach(node => {
-            node.classList.remove('active-coordinator', 'active-query', 'active-recommendation', 'active-quiz');
+            if (node) {
+                node.classList.remove('active-coordinator', 'active-query', 'active-recommendation', 'active-quiz', 'active-pdf');
+            }
         });
 
         if (nodeKey && nodes[nodeKey]) {
@@ -82,8 +120,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Show loading state
-        appendMessage('user', `[Uploading PDF: ${file.name}]`);
-        appendMessage('agent', 'Analyzing document...', 'Coordinator');
+        setActiveNode('pdf');
+        appendMessage('user', file.name, null, true);
+        
+        // Progressive feedback
+        const loadingMsgId = Date.now();
+        showThinking('agent', 'PDF Summarizer');
+        addLog('pdf', 'File received: ' + file.name);
+        
+        setTimeout(() => addLog('pdf', 'Extracting text and metadata...'), 1000);
+        setTimeout(() => addLog('pdf', 'Consulting Precision Analyst AI...'), 2500);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -97,12 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (response.ok) {
+                removeThinking();
                 appendMessage('agent', data.response, data.decision);
                 setActiveNode(null); 
             } else {
+                removeThinking();
                 appendMessage('agent', `Error: ${data.detail}`, 'System Error');
             }
         } catch (error) {
+            removeThinking();
             appendMessage('agent', 'Could not upload file.', 'System Error');
         } finally {
             pdfUpload.value = ''; // Reset input
@@ -115,21 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = userInput.value.trim();
         if (!text) return;
 
-        // Apply localization prompt modifier (advanced feature requirement)
-        const lang = languageSelect.value;
-        let modifiedPrompt = text;
-        if(lang !== 'en') {
-            modifiedPrompt = `[Reply in ${lang.toUpperCase()}] ` + text;
-        }
-
         // Add user msg to UI
         appendMessage('user', text);
         userInput.value = '';
         sendBtn.disabled = true;
 
-        // UI Effects - Step 1: Coordinator takes the request
+        // UI Effects - Step 1: Coordinator Start
         setActiveNode('coordinator');
-        nodes['coordinator'].classList.add('active-coordinator'); // Force coordinator visually active
+        showThinking('agent', 'Coordinator');
         addLog('Coordinator received request.', false);
 
         try {
@@ -137,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    prompt: modifiedPrompt,
+                    prompt: text,
                     session_id: sessionId
                 })
             });
@@ -145,39 +187,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Network response was not ok');
 
             const data = await response.json();
-
-            // UI Effects - Step 2: Show Routing intent
-            addLog(`Intent classified: [${data.decision}]`, true);
             
-            // UI Effects - Step 3: Activate specific Sub-Agent visually
-            setTimeout(() => {
-                let subNodeKey = data.decision.toLowerCase();
-                if (subNodeKey.includes('quiz')) subNodeKey = 'quiz';
-                else if (subNodeKey.includes('recommend')) subNodeKey = 'recommendation';
-                else if (subNodeKey.includes('query')) subNodeKey = 'query';
-                else if (subNodeKey.includes('pdf')) subNodeKey = 'quiz'; // fallback highlight
-                
-                if(nodes[subNodeKey]) {
-                    setActiveNode(subNodeKey);
-                    addLog(`Delegated task to ${data.decision}.`, false);
-                }
+            // UI Effects - Step 2: Show Intent
+            addLog(`Intent classified as ${data.decision}.`, true);
+            
+            // Sub-Agent Activation
+            let subNodeKey = data.decision.toLowerCase();
+            if (subNodeKey.includes('quiz')) subNodeKey = 'quiz';
+            else if (subNodeKey.includes('recommend')) subNodeKey = 'recommendation';
+            else if (subNodeKey.includes('query')) subNodeKey = 'query';
+            else if (subNodeKey.includes('pdf')) subNodeKey = 'pdf';
+            
+            if(nodes[subNodeKey]) {
+                setActiveNode(subNodeKey);
+                addLog(`Delegated to ${data.agent || subNodeKey}.`, false);
+            }
 
-                // Show response after a tiny delay for visual effect
-                setTimeout(() => {
-                    appendMessage('agent', data.response, data.decision);
-                    addLog('Response delivered to user.', true);
-                    
-                    // Reset glowing nodes after delivery
-                    setTimeout(() => setActiveNode(null), 1500);
-                    sendBtn.disabled = false;
-                    userInput.focus();
-                }, 800);
-            }, 800);
+            // Final delivery
+            setTimeout(() => {
+                removeThinking();
+                appendMessage('agent', data.response, data.agent);
+                addLog('Response delivered.', true);
+                
+                setTimeout(() => setActiveNode(null), 2000);
+                sendBtn.disabled = false;
+                userInput.focus();
+            }, 600);
 
         } catch (error) {
             console.error('Error:', error);
-            appendMessage('agent', 'Sorry, I encountered an error connecting to the backend system. Please ensure the server is running and the API key is configured.', 'System Error');
-            addLog('API Error: Connection failed.', true);
+            removeThinking();
+            appendMessage('agent', 'Sorry, I encountered an error. Please check your connection.', 'System Error');
+            addLog('API Connection failed.', true);
             setActiveNode(null);
             sendBtn.disabled = false;
         }

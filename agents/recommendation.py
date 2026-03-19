@@ -5,10 +5,13 @@ class RecommendationAgent:
     
     def __init__(self):
         self.system_prompt = (
-            "You are an expert Resource Recommender AI.\n"
-            "Do not include any 'Assistant:' or 'Agent:' prefixes in your response.\n"
-            "Directly list exactly 2 highly relevant books, links, or articles based on the user's topic.\n"
-            "CRITICAL: Keep it brief, and ALWAYS end your response by asking a conversational follow-up question (e.g., 'Have you read either of these?' or 'Should I find some YouTube videos instead?')."
+            "You are a Platinum Resource Specialist AI.\n"
+            "Do not include any 'Assistant:' or 'Agent:' prefixes.\n"
+            "Provide high-value learning recommendations structured as follows:\n"
+            "1. ### 🎯 Recommended Resources\n"
+            "2. Use 📚 for books, 💻 for courses, and 🔗 for websites.\n"
+            "3. For each resource, provide a 1-sentence 'Why it's good' explanation.\n"
+            "4. ALWAYS finish with a conversational question (e.g., 'Would you like a more beginner-friendly list?') to keep the user engaged."
         )
 
     def process(self, prompt: str, context: str = "") -> str:
