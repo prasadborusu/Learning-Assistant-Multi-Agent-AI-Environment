@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Multi-Agent Learning System</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar for Agent Activity -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Agent Activity Monitor</h2>
+                <div class="status-pulse">
+                    <span class="dot active"></span> System Online
+                </div>
+            </div>
+            
+            <div class="agent-network">
+                <!-- Agent nodes -->
+                <div class="agent-node" id="node-coordinator">
+                    <div class="icon-circle">🧠</div>
+                    <div class="node-info">
+                        <h4>Coordinator</h4>
+                        <p>Router & Logic</p>
+                    </div>
+                </div>
+                
+                <div class="agent-connections">
+                    <div class="agent-node sub-node" id="node-query">
+                        <div class="icon-circle">📚</div>
+                        <div class="node-info">
+                            <h4>Query Agent</h4>
+                            <p>Concepts</p>
+                        </div>
+                    </div>
+                    
+                    <div class="agent-node sub-node" id="node-recommendation">
+                        <div class="icon-circle">🎯</div>
+                        <div class="node-info">
+                            <h4>Recommendation</h4>
+                            <p>Resources</p>
+                        </div>
+                    </div>
+                    
+                    <div class="agent-node sub-node" id="node-quiz">
+                        <div class="icon-circle">✏️</div>
+                        <div class="node-info">
+                            <h4>Quiz Agent</h4>
+                            <p>Testing</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="live-logs-container">
+                <h3>Live Routing Logs</h3>
+                <div class="logs" id="live-logs">
+                    <p class="log-entry system"><span class="timestamp">sys:</span> Initialization complete.</p>
+                </div>
+            </div>
+            
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-container">
+            <header class="chat-header">
+                <div>
+                    <h1>Learning Assistant</h1>
+                    <p class="subtitle">Multi-Agent AI Environment</p>
+                </div>
+                <div class="controls">
+                    <select id="language-select" class="dropdown">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                    </select>
+                </div>
+            </header>
+            
+            <div class="chat-history" id="chat-history">
+                <!-- Messages will appear here -->
+                <div class="message agent-msg">
+                    <div class="msg-avatar">🧠</div>
+                    <div class="msg-content">
+                        <strong>Coordinator System</strong>
+                        <p>Hello! I am your learning coordinator. You can ask me to explain concepts, recommend learning resources, or generate practice quizzes. How can the multi-agent system assist you today?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <form id="chat-form">
+                    <input type="file" id="pdf-upload" accept=".pdf" style="display: none;">
+                    <button type="button" id="attach-btn" title="Upload PDF for Summarization">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path></svg>
+                    </button>
+                    <input type="text" id="user-input" placeholder="Ask a question or upload a PDF..." autocomplete="off">
+                    <button type="submit" id="send-btn">Send</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
