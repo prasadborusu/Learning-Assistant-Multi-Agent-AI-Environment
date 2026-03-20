@@ -24,7 +24,7 @@ It features a **Coordinator Agent** that dynamically delegates user requests to 
 2. **Configure Environment Variables:**
    Open the `.env` file in the root directory and add your API key:
    ```env
-   GEMINI_API_KEY="your_api_key_here"
+  HUGGINGFACE_API_KEY="isert your hf token"
    ```
 
 3. **Run the Application:**
